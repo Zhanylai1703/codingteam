@@ -11,28 +11,24 @@ class TopingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topping
         fields = (
-            'name'
-        )
-
-
-class CategoryFoodSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CategoryFood
-        fields = (
             'name',
-            'is_publish',
         )
 
 
 class FoodSerializer(serializers.ModelSerializer):
+    topping = TopingSerializer(many=True)
+
     class Meta:
-        model = Topping
+        model = Food
+        fields = ['id', 'name', 'description', 'price', 'is_vegan', 'is_special', 'topping']
+
+
+class CategoryFoodSerializer(serializers.ModelSerializer):
+    foods = FoodSerializer(many=True)
+    class Meta:
+        model = CategoryFood
         fields = (
-            'category',
+            'id',
             'name',
-            'description',
-            'price',
-            'is_special',
-            'is_vegan',
-            'topping',
+            'is_publish',
         )

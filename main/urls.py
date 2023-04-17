@@ -1,10 +1,10 @@
 from django.contrib import admin
 from django.urls import path, include
 
-from menu.views import FoodListAPIView
+from menu.views import FoodListView
 
 api_v1 = [
-    path('food/', FoodListAPIView.as_view())
+    path('food/', FoodListView.as_view())
 ]
 
 urlpatterns = [

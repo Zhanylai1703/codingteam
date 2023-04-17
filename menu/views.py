@@ -1,35 +1,49 @@
 from django.shortcuts import render
 
 from rest_framework import generics
+from rest_framework.response import Response
 
 from menu.serializers import (
-    TopingSerializer,
-    CategoryFoodSerializer,
     FoodSerializer,
 )
 from menu.models import (
-    Topping,
     CategoryFood,
     Food
 )
 
 
-class FoodListAPIView(generics.ListAPIView):
-    serializer_class = CategoryFoodSerializer
+class FoodListView(generics.ListAPIView):
+    serializer_class = FoodSerializer
+    queryset = Food.objects.all()
 
     def get_queryset(self):
-        qs = CategoryFood.objects.filter(foods__is_published=True).distinct()
-        is_vegan = self.request.query_params.get('is_vegan')
-        is_special = self.request.query_params.get('is_special')
-        topping = self.request.query_params.get('topping')
+        queryset = super().get_queryset()
+        is_vegan = self.request.GET.get('is_vegan', None)
+        is_special = self.request.GET.get('is_special', None)
+        toping_names = self.request.GET.getlist('toping_name', [])
 
-        if is_vegan:
-            qs = qs.filter(foods__is_vegan=is_vegan)
+        if is_vegan is not None:
+            queryset = queryset.filter(is_vegan=is_vegan)
 
-        if is_special:
-            qs = qs.filter(foods__is_special=is_special)
+        if is_special is not None:
+            queryset = queryset.filter(is_special=is_special)
 
-        if topping:
-            qs = qs.filter(foods__toppings__name__icontains=topping)
+        if toping_names:
+            queryset = queryset.filter(toping__name__in=toping_names)
 
-        return qs
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        categories = CategoryFood.objects.filter(foods__in=queryset).distinct()
+        result = []
+        for category in categories:
+            category_data = {
+                'id': category.id,
+                'name': category.name,
+                'foods': self.get_serializer(queryset.filter(category=category), many=True).data
+            }
+            result.append(category_data)
+
+        return Response(result)
